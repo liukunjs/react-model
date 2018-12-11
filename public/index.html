@@ -3,8 +3,6 @@
   <head>
     <meta charset="utf-8">
     <link rel="shortcut icon" href="%PUBLIC_URL%/favicon.ico">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <meta name="theme-color" content="#000000">
     <!--
       manifest.json provides metadata used when your web app is added to the
       homescreen on Android. See https://developers.google.com/web/fundamentals/web-app-manifest/
@@ -22,6 +20,127 @@
     <title>React App</title>
   </head>
   <body>
+  <script>
+    var doc = window.document;
+    var docE1 = doc.documentElement;
+    var metaE1 = doc.querySelector('meta[name="viewport"]');
+    var flexibleE1 = doc.querySelector('meta[name="flexible"]');
+    var dpr = 0;
+    var scale = 0;
+    var tid ;
+    var lib = window.lib || {}
+    var flexible = lib.flexible || {}
+    // 如果有就获取flexible 和viewport的值，然后设置
+    if (metaE1){
+      console.log(113)
+      console.warn("将根据自己已有的meta标签来设置比例")
+      // 匹配xxx.x的数值
+      var match = metaE1.getAttribute("content").match(/initial\-scale=([\d\.]+)/)
+      if(match){
+        scale = parseFloat(match[1])
+      }
+    } else if(flexibleE1){
+      var content = flexibleE1.getAttribute("content")
+      if(content){
+        var initialDpr = content.match(/initial\-dpr=([\d\.]+)/)
+        var maximum = content.match(/maximum\-dpr=([/d/.]+)/)
+      }
+      if(initialDpr){
+        dpr = parseFloat(initialDpr[1])
+        scale = parseFloat((1/dpr).tofixed(2))
+      }
+      if(maximum){
+        dpr = parseFloat(maximum[1])
+        scale = parseFloat((1/dpr).tofixed(2))
+      }
+
+    }
+    if(!dpr&&!scale){
+      var isIPhone = window.navigator.appVersion.match(/iphone/gi);
+      var isAndroid = window.navigator.appVersion.match(/android/gi);
+      var devicePixelRatio = window.devicePixelRatio;
+      if(isIPhone){
+        console.log(111)
+        // ios下，对于2和3的屏，用于2倍的方案，其他的用1的方案
+        if(devicePixelRatio>=3&&(!dpr||dpr>3)){
+          dpr = 3;
+        }else if(devicePixelRatio >= 2&&(!dpr||dpr>2)){
+          dpr = 2;
+        }else {
+          dpr = 1;
+        }
+          
+      }else if(isAndroid && devicePixelRatio > 2){
+                dpr = 3;
+            }else {
+                // 其他设备下，仍旧使用1倍的方案
+              dpr = 1;
+            }
+            scale = 1/dpr
+    }
+    docE1.setAttribute("data-dpr",dpr);
+    // 设置viewport,如果没有viewport 就设置一个viewport
+    if(!metaE1){
+      metaE1 = doc.createElement("meta");
+      console.log(metaE1)
+      metaE1.setAttribute("name","viewport");
+      metaE1.setAttribute("content","initial-scale="+scale+",maximum-scale="+scale+",minimum-scale="+scale+",user-scalable=no")
+
+    if (docE1.firstElementChild) {
+                docE1.firstElementChild.appendChild(metaE1);
+          }else{
+      // ？？？
+      var wrap = doc.createElement("div");
+      wrap.appendChild(metaE1);
+      doc.write(wrap.innerHtml)
+    }
+  }
+    // 设置rem
+    function refreshRem(){
+      // 获取视口宽度  为虚拟宽度
+      var width = docE1.getBoundingClientRect().width;
+      console.log(width)
+      // dpr = 物理宽度除以虚拟宽度，with
+      // ？？？
+      if(width/dpr>540){
+       // 设备像素
+       width = 540 * dpr;
+      }
+      var rem = width / 10;
+      // 设置 html 的宽度
+      docE1.style.fontSize = parseInt(rem) + "px";
+      flexible.rem = window.rem = parseInt(rem);
+    }
+    // 检测页面改变窗口
+    window.addEventListener("resize",function(){
+      clearTimeout(tid);
+      tid = setTimeout(refreshRem,300);
+    },false)
+    // 检测页面进入事件
+    window.addEventListener("pageshow",function(e){
+      if(e.persisted){
+        clearTimeout(tid)
+        tid = setTimeout(refreshRem,300)
+      }
+    })
+    // 当页面加载完成
+    if(doc.readyState === "complete"){
+       // 为什么 设置了 html 还要设置 body???
+      doc.body.style.fontSize = 12 * dpr + "px"
+    } else {
+      doc.body.style.fontSize = 12 * dpr + "px"
+    }
+    refreshRem();
+    flexible.dpr = window.dpr = dpr
+    flexible.refreshRem = refreshRem
+    flexible.rem2px = function(d){
+      var val = parseFloat(d) * this.rem;
+      if(typeof d === "string"&&d.match(/rem$/)){
+        val += "px";
+      }
+      return val
+    }
+  </script>
     <noscript>
       You need to enable JavaScript to run this app.
     </noscript>
