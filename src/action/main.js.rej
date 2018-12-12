@@ -1,0 +1,3 @@
+diff a/src/action/main.js b/src/action/main.js	(rejected hunks)
+@@ -0,0 +1 @@
++export default a = 3;
