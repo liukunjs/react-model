@@ -1,1 +1,3 @@
-export default a = 3;
+export function (){
+	console.log(898989)
+}
